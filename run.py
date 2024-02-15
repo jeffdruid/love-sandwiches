@@ -23,11 +23,10 @@ def get_sales_data():
         print("Please enter sales data from the last market.")
         print("Data should be six numbers, separated by commas.")
         print("Example: 10,20,30,40,50,60\n")
-
         data_str = input("Enter your data here: \n")
-        sales_data = data_str.split(",")
+        
+        sales_data = list(data_str.split(","))
 
-        validate_data(sales_data)
         if validate_data(sales_data):
             print("Data is valid!")
             break
@@ -70,14 +69,14 @@ def validate_data(values):
 #     surplus_worksheet.append_row(data)
 #     print("Surplus worksheet updated successfully.\n")
 
-def update_worksheet(data, worksheet):
+def update_worksheet(new_row, worksheet):
     """
     Receives a list of integers to be inserted into a worksheet
     Update the relevant worksheet with the data provided
     """
     print(f"Updating {worksheet} worksheet...\n")
     worksheet_to_update = SHEET.worksheet(worksheet)
-    worksheet_to_update.append_row(data)
+    worksheet_to_update.append_row(new_row)
     print(f"{worksheet} worksheet updated successfully.\n")
 
 def calculate_surplus_data(sales_row):
@@ -92,9 +91,11 @@ def calculate_surplus_data(sales_row):
     stock_row = stock[-1]
     
     surplus_data = []
+    
     for stock, sales in zip(stock_row, sales_row):
         surplus = int(stock) - sales
         surplus_data.append(surplus)
+        
     return surplus_data
     
 def get_last_5_entries_sales():
@@ -109,6 +110,7 @@ def get_last_5_entries_sales():
     for ind in range(1, 7):
         column = sales.col_values(ind)
         columns.append(column[-5:])
+        
     return columns
 
 def calculate_stock_data(data):
@@ -119,7 +121,8 @@ def calculate_stock_data(data):
     new_stock_data = []
     
     for column in data:
-        int_column = [int(num) for num in data]
+        int_column = [int(num) for num in column]
+        
         average = sum(int_column) / len(int_column)
         stock_num = average * 1.1
         new_stock_data.append(round(stock_num))
@@ -133,11 +136,32 @@ def main():
     data = get_sales_data()
     sales_data = [int(num) for num in data]
     update_worksheet(sales_data, "sales")
-    new_surplus_data = calculate_surplus_data(sales_data)
-    update_worksheet(new_surplus_data, "surplus")
+    
+    new_surplus_row = calculate_surplus_data(sales_data)
+    update_worksheet(new_surplus_row, "surplus")
+    
     sales_columns = get_last_5_entries_sales()
     stock_data = calculate_stock_data(sales_columns)
     update_worksheet(stock_data, "stock")
     
+    return stock_data
+    
 print("Welcome to Love Sandwiches Data Automation")
-main()
+stock_data = main()
+
+def get_stock_values(data):
+    """
+    Retrieves the headings from the worksheet and creates a dictionary
+    using the headings as keys and the data as values.
+    """
+    # Retrieve headings from the worksheet
+    headings = SHEET.worksheet("stock").row_values(1)
+    
+    # Create a dictionary using dictionary comprehension
+    stock_values = {heading: value for heading, value in zip(headings, data)}
+    
+    return stock_values
+
+# Call the function to get stock values
+stock_values = get_stock_values(stock_data)
+print(stock_values)
